@@ -31,3 +31,192 @@ input[type=color]{width:100%;height:42px;border:1px solid var(--line);border-rad
 .layouts button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .pv{display:grid;gap:12px;justify-items:center}
 canvas,.pv img{width:100%;max-width:340px;aspect-ratio:1/2;border-radius:12px;border:1px solid var(--line);display:block;background:#ddd}
+.dl{font:inherit;font-weight:700;font-size:16px;width:100%;max-width:340px;padding:14px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.rs{font:inherit;font-weight:600;font-size:15px;width:100%;max-width:340px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);cursor:pointer}
+.pals{display:flex;gap:10px;flex-wrap:wrap}.pals button{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.note{font-size:12px;color:var(--mute);text-align:center;margin:0}
+.chk{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;font-size:14px;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Pin Maker <span style="font-weight:400;color:var(--mute);font-size:13px">1000 × 2000 · Poppins</span></h1>
+
+<div class="panel">
+  <label>Size <select id="psz"></select></label>
+  <label>Layout
+    <div class="layouts" id="layouts"></div>
+  </label>
+  <label>Photo 1 <input type="file" id="f1" accept="image/*"></label>
+  <label>Photo 2 (stacked layout only) <input type="file" id="f2" accept="image/*"></label>
+  <label>Logo (optional, top right) <input type="file" id="f3" accept="image/*"></label>
+  <label>Photo zoom <input type="range" id="zoom" min="100" max="250" value="100"></label>
+  <label>Photo left / right <input type="range" id="px" min="-100" max="100" value="0"></label>
+  <label>Photo up / down <input type="range" id="py" min="-100" max="100" value="0"></label>
+  <label>Photo style <select id="flt"><option value="">Normal</option><option value="grayscale(1)">Black &amp; white</option><option value="sepia(.35) saturate(1.2)">Warm</option><option value="contrast(.9) brightness(1.1) saturate(.8)">Faded</option><option value="saturate(1.4) contrast(1.05)">Vivid</option></select></label>
+  <label>Title <textarea id="title">10 Cozy Fall Dinner Ideas</textarea></label>
+  <label>Subtitle <input type="text" id="sub" value="easy weeknight recipes"></label>
+  <label>Footer / website <input type="text" id="foot" value="yourblog.com"></label>
+  <label>Badge (optional, e.g. 10 or NEW) <input type="text" id="badge" maxlength="10"></label>
+  <label>Title size <input type="range" id="size" min="50" max="160" value="104"></label>
+  <label>Photo darkening <input type="range" id="dark" min="0" max="80" value="20"></label>
+  <label>Move text up / down <input type="range" id="ty" min="-400" max="400" value="0"></label>
+  <label>Letter spacing <input type="range" id="ls" min="0" max="12" value="0"></label>
+  <label>Line spacing <input type="range" id="lh" min="90" max="150" value="118"></label>
+  <label>Block opacity <input type="range" id="bo" min="40" max="100" value="100"></label>
+  <label class="chk"><input type="checkbox" id="caps"> UPPERCASE title</label>
+  <label>Weight
+    <select id="wt"><option value="600">Semibold</option><option value="700" selected>Bold</option><option value="800">Extra bold</option></select>
+  </label>
+  <label>Download format <select id="fmt"><option value="png">PNG (best quality)</option><option value="jpg">JPG (smaller file)</option></select></label>
+  <label>Color palettes <div class="pals" id="pals"></div></label>
+  <div class="row">
+    <label>Block <input type="color" id="c1" value="#f6e7d8"></label>
+    <label>Text <input type="color" id="c2" value="#3b2a20"></label>
+    <label>Accent <input type="color" id="c3" value="#c8553d"></label>
+  </div>
+</div>
+
+<div class="pv">
+  <canvas id="cv" width="1000" height="2000"></canvas>
+  <button class="dl" id="dl">Download PNG</button>
+  <button class="rs" id="all">Download all sizes (ZIP)</button>
+  <button class="rs" id="rs">Reset</button>
+  <p class="note" id="note"></p>
+</div>
+</div>
+
+<script>
+(function(){
+var W=1000,H=2000,OUT={w:1000,h:2000},cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var $=function(i){return document.getElementById(i)};
+var imgs=[null,null],layout='banner';
+var LAYOUTS=[['banner','Center banner'],['split','Color top'],['stack','Two photos'],['bottom','Bottom title'],['frame','Photo frame'],['bars','Top & bottom bars']];
+var box=$('layouts');
+LAYOUTS.forEach(function(l){var b=document.createElement('button');b.textContent=l[1];b.dataset.k=l[0];if(l[0]===layout)b.className='on';
+  b.onclick=function(){layout=l[0];[].forEach.call(box.children,function(x){x.className=x.dataset.k===layout?'on':''});draw()};box.appendChild(b)});
+
+var KEYS=['title','sub','foot','size','dark','wt','c1','c2','c3','zoom','px','py','ty','badge','ls','lh','bo','flt','fmt','psz'];
+function mark(){[].forEach.call(box.children,function(x){x.className=x.dataset.k===layout?'on':''})}
+function save(){try{var o={layout:layout,caps:$('caps').checked};KEYS.forEach(function(k){o[k]=$(k).value});localStorage.setItem('pinmaker-v1',JSON.stringify(o))}catch(e){}}
+function restore(){try{var o=JSON.parse(localStorage.getItem('pinmaker-v1')||'null');if(!o)return;KEYS.forEach(function(k){if(o[k]!=null)$(k).value=o[k]});$('caps').checked=!!o.caps;if(o.layout)layout=o.layout;mark()}catch(e){}}
+var PAL=[['#f6e7d8','#3b2a20','#c8553d'],['#e3ebe0','#26382c','#5f8a63'],['#fbe4e4','#4a2630','#d46a7e'],['#12263f','#f4efe6','#e8b04a'],['#111111','#ffffff','#ff5a36'],['#dff1f5','#12414d','#1a8aa0']];
+PAL.forEach(function(p){var b=document.createElement('button');b.type='button';b.style.background='linear-gradient(135deg,'+p[0]+' 50%,'+p[2]+' 50%)';
+  b.onclick=function(){$('c1').value=p[0];$('c2').value=p[1];$('c3').value=p[2];draw()};$('pals').appendChild(b)});
+var SIZES=[['Pinterest tall · 1000×2000',1000,2000],['Pinterest standard · 1000×1500',1000,1500],['Pinterest square · 1000×1000',1000,1000],['Pinterest small · 600×900',600,900],['Pinterest Idea Pin · 1080×1920',1080,1920],
+['Instagram portrait · 1080×1350',1080,1350],['Instagram square · 1080×1080',1080,1080],['Story / Reel / TikTok · 1080×1920',1080,1920],['Facebook / blog link · 1200×630',1200,630],['X (Twitter) post · 1600×900',1600,900],['YouTube thumbnail · 1280×720',1280,720]];
+[['Pinterest',0,5],['Social media',5,11]].forEach(function(g){var og=document.createElement('optgroup');og.label=g[0];
+  for(var i=g[1];i<g[2];i++){var o=document.createElement('option');o.value=i;o.textContent=SIZES[i][0];og.appendChild(o)}$('psz').appendChild(og)});
+function sizeSetup(){var p=SIZES[+$('psz').value]||SIZES[0];OUT={w:p[1],h:p[2]};H=W*OUT.h/OUT.w;
+  if(cv.width!==OUT.w||cv.height!==OUT.h){cv.width=OUT.w;cv.height=OUT.h}
+  ctx.setTransform(OUT.w/W,0,0,OUT.w/W,0,0);cv.style.aspectRatio=OUT.w+'/'+OUT.h;cv.style.maxWidth=OUT.w>OUT.h?'560px':'340px'}
+restore();
+function load(inp,i){inp.onchange=function(){var f=inp.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){var im=new Image();im.onload=function(){imgs[i]=im;draw()};im.src=r.result};r.readAsDataURL(f)}}
+load($('f1'),0);load($('f2'),1);load($('f3'),2);
+
+function cover(im,x,y,w,h){
+  if(!im){ctx.fillStyle='#cfc6be';ctx.fillRect(x,y,w,h);ctx.fillStyle='#8a7f77';ctx.font='600 44px Poppins, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Add a photo',x+w/2,y+h/2);return}
+  var z=$('zoom').value/100,s=Math.max(w/im.width,h/im.height)*z,dw=im.width*s,dh=im.height*s,ox=$('px').value/100*Math.max(0,(dw-w)/2),oy=$('py').value/100*Math.max(0,(dh-h)/2);
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.filter=$('flt').value||'none';ctx.drawImage(im,x+(w-dw)/2-ox,y+(h-dh)/2-oy,dw,dh);ctx.restore()}
+function shade(a,x,y,w,h){ctx.fillStyle='rgba(0,0,0,'+a+')';ctx.fillRect(x,y,w,h)}
+function font(sz,wt){return (wt||$('wt').value)+' '+sz+'px Poppins, sans-serif'}
+function wrap(t,maxW){var out=[];t.split('\n').forEach(function(p){var words=p.split(/\s+/).filter(Boolean),line='';
+  words.forEach(function(w){var test=line?line+' '+w:w;if(ctx.measureText(test).width>maxW&&line){out.push(line);line=w}else line=test});
+  if(line)out.push(line)});return out}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function titleLines(maxW){var sz=Math.round(+$('size').value*Math.min(1,H/1500)),t=$('title').value;if($('caps').checked)t=t.toUpperCase();
+  ctx.font=font(sz);ctx.letterSpacing=$('ls').value+'px';var r={lines:wrap(t,maxW),sz:sz,lh:sz*($('lh').value/100)};ctx.letterSpacing='0px';return r}
+function drawLines(L,x,y,align,color){ctx.fillStyle=color;ctx.textAlign=align;ctx.textBaseline='top';ctx.font=font(L.sz);ctx.letterSpacing=$('ls').value+'px';
+  L.lines.forEach(function(s,i){ctx.fillText(s,x,y+i*L.lh)});ctx.letterSpacing='0px'}
+function footer(y){var t=$('foot').value;if(!t)return;ctx.save();ctx.font=font(40,'600');ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=14;ctx.fillStyle='#fff';ctx.fillText(t,W/2,y);ctx.restore()}
+function sub(x,y,align,color,sz){var t=$('sub').value;if(!t)return 0;ctx.font=font(sz||46,'600');ctx.textAlign=align;ctx.textBaseline='top';ctx.fillStyle=color;ctx.fillText(t,x,y);return (sz||46)*1.5}
+
+function draw(){
+  sizeSetup();
+  var c1=$('c1').value,c2=$('c2').value,c3=$('c3').value,d=$('dark').value/100,L,h,y,T=+$('ty').value;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle=c1;ctx.fillRect(0,0,W,H);
+  if(layout==='banner'){
+    cover(imgs[0],0,0,W,H);shade(d,0,0,W,H);
+    L=titleLines(760);var sh=$('sub').value?80:0;h=L.lines.length*L.lh+sh+150;y=(H-h)/2+T;
+    ctx.save();ctx.shadowColor='rgba(0,0,0,.25)';ctx.shadowBlur=40;ctx.shadowOffsetY=10;rr(60,y,880,h,36);ctx.globalAlpha=$('bo').value/100;ctx.fillStyle=c1;ctx.fill();ctx.globalAlpha=1;ctx.restore();
+    drawLines(L,W/2,y+75,'center',c2);sub(W/2,y+75+L.lines.length*L.lh+14,'center',c3,44);footer(H-110);
+  }else if(layout==='split'){
+    var th=H*0.42;cover(imgs[0],0,th,W,H-th);shade(d,0,th,W,H-th);
+    ctx.fillStyle=c1;ctx.fillRect(0,0,W,th);
+    L=titleLines(840);var sh2=$('sub').value?80:0;h=L.lines.length*L.lh+sh2;y=Math.max(60,(th-h)/2)+T;
+    drawLines(L,W/2,y,'center',c2);sub(W/2,y+L.lines.length*L.lh+10,'center',c3,46);
+    ctx.fillStyle=c3;ctx.fillRect(W/2-60,th-8,120,16);footer(H-100);
+  }else if(layout==='stack'){
+    cover(imgs[0],0,0,W,H/2);cover(imgs[1]||imgs[0],0,H/2,W,H/2);shade(d,0,0,W,H);
+    L=titleLines(780);var sh3=$('sub').value?80:0;h=L.lines.length*L.lh+sh3+110;y=(H-h)/2+T;
+    ctx.save();ctx.shadowColor='rgba(0,0,0,.25)';ctx.shadowBlur=30;rr(40,y,920,h,0);ctx.globalAlpha=$('bo').value/100;ctx.fillStyle=c1;ctx.fill();ctx.globalAlpha=1;ctx.restore();
+    drawLines(L,W/2,y+55,'center',c2);sub(W/2,y+55+L.lines.length*L.lh+10,'center',c3,44);footer(H-90);
+  }else if(layout==='bars'){
+    L=titleLines(840);h=L.lines.length*L.lh;var bh=h+230,tb=Math.min(240,H*0.12);
+    cover(imgs[0],0,tb,W,H-tb-bh);shade(d,0,tb,W,H-tb-bh);
+    ctx.fillStyle=c1;ctx.fillRect(0,0,W,tb);ctx.fillRect(0,H-bh,W,bh);ctx.fillStyle=c3;ctx.fillRect(0,tb-10,W,10);
+    sub(W/2,tb/2-40,'center',c2,52);drawLines(L,W/2,H-bh+80+T,'center',c2);
+    var fb=$('foot').value;if(fb){ctx.font=font(36,'600');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c3;ctx.fillText(fb,W/2,H-70)}
+  }else if(layout==='frame'){
+    var fa=Math.min(460,H*0.23),ph=H-60-fa;ctx.save();rr(60,60,W-120,ph,30);ctx.clip();cover(imgs[0],60,60,W-120,ph);shade(d,60,60,W-120,ph);ctx.restore();
+    L=titleLines(840);var sh4=$('sub').value?70:0;h=L.lines.length*L.lh+sh4;y=H-fa+(fa-h)/2-30+T;
+    drawLines(L,W/2,y,'center',c2);sub(W/2,y+L.lines.length*L.lh+8,'center',c3,44);
+    var ft=$('foot').value;if(ft){ctx.font=font(36,'600');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c2;ctx.fillText(ft,W/2,H-60)}
+  }else{
+    cover(imgs[0],0,0,W,H);shade(d*0.6,0,0,W,H);
+    var g=ctx.createLinearGradient(0,H*0.4,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,'+(0.55+d*0.5)+')');ctx.fillStyle=g;ctx.fillRect(0,H*0.4,W,H*0.6);
+    L=titleLines(840);h=L.lines.length*L.lh;y=H-260-h+T;
+    ctx.fillStyle=c3;ctx.fillRect(80,y-60,120,14);
+    drawLines(L,80,y,'left','#fff');sub(80,y+h+10,'left',c1,46);
+    var t=$('foot').value;if(t){ctx.font=font(36,'600');ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillText(t,80,H-90)}
+  }
+  drawLogo();drawBadge();save();
+}
+function drawBadge(){var t=$('badge').value.trim();if(!t)return;var r=125,sz=120;
+  ctx.save();ctx.translate(50+r,50+r);ctx.rotate(-0.2);ctx.shadowColor='rgba(0,0,0,.3)';ctx.shadowBlur=20;ctx.fillStyle=$('c3').value;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.shadowColor='transparent';
+  ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.letterSpacing='0px';
+  do{ctx.font='800 '+sz+'px Poppins, sans-serif';sz-=4}while(ctx.measureText(t).width>r*1.6&&sz>20);ctx.fillText(t,0,4);ctx.restore()}
+function drawLogo(){var im=imgs[2];if(!im)return;var k=Math.min(220/im.width,120/im.height),w=im.width*k,h=im.height*k;ctx.drawImage(im,W-40-w,40,w,h)}
+['title','sub','foot','size','dark','caps','wt','c1','c2','c3','zoom','px','py','ty','badge','ls','lh','bo','flt','fmt','psz'].forEach(function(i){$(i).addEventListener('input',draw);$(i).addEventListener('change',draw)});
+
+var DEF={title:'10 Cozy Fall Dinner Ideas',sub:'easy weeknight recipes',foot:'yourblog.com',size:'104',dark:'20',wt:'700',c1:'#f6e7d8',c2:'#3b2a20',c3:'#c8553d',zoom:'100',px:'0',py:'0',ty:'0',badge:'',ls:'0',lh:'118',bo:'100',flt:'',fmt:'png',psz:'0'};
+$('rs').onclick=function(){Object.keys(DEF).forEach(function(k){$(k).value=DEF[k]});$('caps').checked=false;$('f1').value='';$('f2').value='';$('f3').value='';imgs=[null,null,null];layout='banner';
+  [].forEach.call(box.children,function(x){x.className=x.dataset.k===layout?'on':''});$('note').textContent='';draw()};
+function slug(){return ($('title').value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'pin').slice(0,50)}
+function anchorSave(name,blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function saveBlob(name,blob){
+  if(window.claude&&claude.use){return claude.use('downloads').then(function(dl){if(!dl)return anchorSave(name,blob);return dl.save({filename:name,data:blob})}).catch(function(e){if(!(e&&e.code==='declined'))anchorSave(name,blob)})}
+  anchorSave(name,blob)}
+var CT=null;
+function crc(u){if(!CT){CT=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CT[n]=c>>>0}}var c=-1;for(var i=0;i<u.length;i++)c=CT[(c^u[i])&255]^(c>>>8);return (c^-1)>>>0}
+function zip(files){var parts=[],cd=[],off=0,enc=new TextEncoder();
+  files.forEach(function(f){var nm=enc.encode(f.name),c=crc(f.data),n=f.data.length,h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(12,0x21,true);h.setUint32(14,c,true);h.setUint32(18,n,true);h.setUint32(22,n,true);h.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(h.buffer),nm,f.data);
+    var d=new DataView(new ArrayBuffer(46));d.setUint32(0,0x02014b50,true);d.setUint16(4,20,true);d.setUint16(6,20,true);d.setUint16(14,0x21,true);d.setUint32(16,c,true);d.setUint32(20,n,true);d.setUint32(24,n,true);d.setUint16(28,nm.length,true);d.setUint32(42,off,true);
+    cd.push(new Uint8Array(d.buffer),nm);off+=30+nm.length+n});
+  var cs=0;cd.forEach(function(x){cs+=x.length});var e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob(parts.concat(cd,[new Uint8Array(e.buffer)]),{type:'application/zip'})}
+$('all').onclick=function(){var cur=$('psz').value,jpg=$('fmt').value==='jpg',base=slug(),files=[],seen={},i=0;$('note').textContent='Building all sizes…';
+  function next(){
+    while(i<SIZES.length&&seen[SIZES[i][1]+'x'+SIZES[i][2]])i++;
+    if(i>=SIZES.length){$('psz').value=cur;draw();saveBlob(base+'-all-sizes.zip',zip(files));$('note').textContent='';return}
+    var p=SIZES[i];seen[p[1]+'x'+p[2]]=1;$('psz').value=i;draw();i++;
+    cv.toBlob(function(b){b.arrayBuffer().then(function(ab){files.push({name:base+'-'+p[1]+'x'+p[2]+(jpg?'.jpg':'.png'),data:new Uint8Array(ab)});next()})},jpg?'image/jpeg':'image/png',0.92)}
+  next()};
+function fontsReady(){return Promise.all(['600','700','800'].map(function(w){return document.fonts.load(w+' 60px Poppins')}))}
+draw();fontsReady().then(draw).catch(function(){});
+
+$('dl').onclick=function(){
+  var name=($('title').value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'pin').slice(0,50)+'-'+OUT.w+'x'+OUT.h+'.'+($('fmt').value==='jpg'?'jpg':'png');
+  cv.toBlob(function(blob){
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+    $('note').textContent='Saved ✓';
+  },$('fmt').value==='jpg'?'image/jpeg':'image/png',0.92)};
+})();
+</script>
+</body>
+</html>
