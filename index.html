@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=ABeeZee&family=Aaargh&family=Abril+Fatface&family=Alegreya+Sans+SC:wght@100;400;700&family=Amaranth:wght@400;700&family=Autour+One&family=Boogaloo&family=Comfortaa:wght@400;700&family=Crete+Round&family=Cuprum:wght@400;700&family=Jura:wght@400;700&family=Neuton:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Condensed:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Alex+Brush&family=Allura&family=Amatic+SC:wght@400;700&family=Copse&family=Finger+Paint&family=Grand+Hotel&family=Quicksand:wght@400;700&family=Days+One&family=Bebas+Neue&family=Anton&family=Dancing+Script:wght@400;700&family=Patrick+Hand&family=Orbitron:wght@400;700&family=Black+Ops+One&family=Rubik+Dirt&family=Pacifico&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#faf7f4;--card:#fff;--ink:#2b2420;--mute:#7a6e66;--line:#e6ddd5;--accent:#c8553d;--accent-ink:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -65,6 +67,7 @@ canvas,.pv img{width:100%;max-width:340px;aspect-ratio:1/2;border-radius:12px;bo
   <label>Line spacing <input type="range" id="lh" min="90" max="150" value="118"></label>
   <label>Block opacity <input type="range" id="bo" min="40" max="100" value="100"></label>
   <label class="chk"><input type="checkbox" id="caps"> UPPERCASE title</label>
+  <label>Title font <select id="tf"></select></label>
   <label>Weight
     <select id="wt"><option value="600">Semibold</option><option value="700" selected>Bold</option><option value="800">Extra bold</option></select>
   </label>
@@ -96,13 +99,20 @@ var box=$('layouts');
 LAYOUTS.forEach(function(l){var b=document.createElement('button');b.textContent=l[1];b.dataset.k=l[0];if(l[0]===layout)b.className='on';
   b.onclick=function(){layout=l[0];[].forEach.call(box.children,function(x){x.className=x.dataset.k===layout?'on':''});draw()};box.appendChild(b)});
 
-var KEYS=['title','sub','foot','size','dark','wt','c1','c2','c3','zoom','px','py','ty','badge','ls','lh','bo','flt','fmt','psz'];
+var KEYS=['title','sub','foot','size','dark','wt','c1','c2','c3','zoom','px','py','ty','badge','ls','lh','bo','flt','fmt','psz','tf'];
 function mark(){[].forEach.call(box.children,function(x){x.className=x.dataset.k===layout?'on':''})}
 function save(){try{var o={layout:layout,caps:$('caps').checked};KEYS.forEach(function(k){o[k]=$(k).value});localStorage.setItem('pinmaker-v1',JSON.stringify(o))}catch(e){}}
 function restore(){try{var o=JSON.parse(localStorage.getItem('pinmaker-v1')||'null');if(!o)return;KEYS.forEach(function(k){if(o[k]!=null)$(k).value=o[k]});$('caps').checked=!!o.caps;if(o.layout)layout=o.layout;mark()}catch(e){}}
 var PAL=[['#f6e7d8','#3b2a20','#c8553d'],['#e3ebe0','#26382c','#5f8a63'],['#fbe4e4','#4a2630','#d46a7e'],['#12263f','#f4efe6','#e8b04a'],['#111111','#ffffff','#ff5a36'],['#dff1f5','#12414d','#1a8aa0']];
 PAL.forEach(function(p){var b=document.createElement('button');b.type='button';b.style.background='linear-gradient(135deg,'+p[0]+' 50%,'+p[2]+' 50%)';
   b.onclick=function(){$('c1').value=p[0];$('c2').value=p[1];$('c3').value=p[2];draw()};$('pals').appendChild(b)});
+var FONTS=[['Poppins (default)','Poppins',[400,600,700,800]],
+['ABeeZee','ABeeZee',[400]],['Aaargh','Aaargh',[400]],['Abril Fatface','Abril Fatface',[400],'serif'],['Alegreya Sans SC','Alegreya Sans SC',[100,400,700]],['Amaranth','Amaranth',[400,700]],['Autour One','Autour One',[400],'cursive'],['Boogaloo','Boogaloo',[400],'cursive'],['Comfortaa','Comfortaa',[400,700]],['Crete Round','Crete Round',[400],'serif'],['Cuprum','Cuprum',[400,700]],['Jura','Jura',[400,700]],['Neuton','Neuton',[400,700],'serif'],['Roboto','Roboto',[400,700]],['Roboto Condensed','Roboto Condensed',[400,700]],['Roboto Slab','Roboto Slab',[400,700],'serif'],['Alfa Slab One','Alfa Slab One',[400],'serif'],['Alex Brush','Alex Brush',[400],'cursive'],['Allura','Allura',[400],'cursive'],['Amatic SC','Amatic SC',[400,700],'cursive'],['Copse','Copse',[400],'serif'],['Finger Paint','Finger Paint',[400],'cursive'],['Grand Hotel','Grand Hotel',[400],'cursive'],
+['Quicksand (like Caviar Dreams)','Quicksand',[400,700]],['Days One (like Days)','Days One',[400]],['Bebas Neue (like Boston Traffic)','Bebas Neue',[400]],['Anton (like Magna Black)','Anton',[400]],['Dancing Script (like BPscript)','Dancing Script',[400,700],'cursive'],['Patrick Hand (like SF Cartoonist)','Patrick Hand',[400],'cursive'],['Orbitron (like Heavy Data)','Orbitron',[400,700]],['Black Ops One (like Capture It)','Black Ops One',[400],'cursive'],['Rubik Dirt (like Downcome)','Rubik Dirt',[400]],['Pacifico (script)','Pacifico',[400],'cursive']];
+[['Default',0,1],['Your fonts (Google Fonts)',1,22],['Closest lookalikes',22,32]].forEach(function(g){var og=document.createElement('optgroup');og.label=g[0];
+  for(var i=g[1];i<g[2];i++){var o=document.createElement('option');o.value=i;o.textContent=FONTS[i][0];og.appendChild(o)}$('tf').appendChild(og)});
+function pickW(f){var t=+$('wt').value,b=f[2][0];f[2].forEach(function(w){if(Math.abs(w-t)<Math.abs(b-t))b=w});return b}
+function loadTF(){var f=FONTS[+$('tf').value]||FONTS[0];return Promise.all(f[2].map(function(w){return document.fonts.load(w+' 60px "'+f[1]+'"')})).then(draw).catch(function(){})}
 var SIZES=[['Pinterest tall · 1000×2000',1000,2000],['Pinterest standard · 1000×1500',1000,1500],['Pinterest square · 1000×1000',1000,1000],['Pinterest small · 600×900',600,900],['Pinterest Idea Pin · 1080×1920',1080,1920],
 ['Instagram portrait · 1080×1350',1080,1350],['Instagram square · 1080×1080',1080,1080],['Story / Reel / TikTok · 1080×1920',1080,1920],['Facebook / blog link · 1200×630',1200,630],['X (Twitter) post · 1600×900',1600,900],['YouTube thumbnail · 1280×720',1280,720]];
 [['Pinterest',0,5],['Social media',5,11]].forEach(function(g){var og=document.createElement('optgroup');og.label=g[0];
@@ -120,7 +130,7 @@ function cover(im,x,y,w,h){
   var z=$('zoom').value/100,s=Math.max(w/im.width,h/im.height)*z,dw=im.width*s,dh=im.height*s,ox=$('px').value/100*Math.max(0,(dw-w)/2),oy=$('py').value/100*Math.max(0,(dh-h)/2);
   ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.filter=$('flt').value||'none';ctx.drawImage(im,x+(w-dw)/2-ox,y+(h-dh)/2-oy,dw,dh);ctx.restore()}
 function shade(a,x,y,w,h){ctx.fillStyle='rgba(0,0,0,'+a+')';ctx.fillRect(x,y,w,h)}
-function font(sz,wt){return (wt||$('wt').value)+' '+sz+'px Poppins, sans-serif'}
+function font(sz,wt){if(wt)return wt+' '+sz+'px Poppins, sans-serif';var f=FONTS[+$('tf').value]||FONTS[0];return pickW(f)+' '+sz+'px "'+f[1]+'", '+(f[3]||'sans-serif')}
 function wrap(t,maxW){var out=[];t.split('\n').forEach(function(p){var words=p.split(/\s+/).filter(Boolean),line='';
   words.forEach(function(w){var test=line?line+' '+w:w;if(ctx.measureText(test).width>maxW&&line){out.push(line);line=w}else line=test});
   if(line)out.push(line)});return out}
@@ -179,9 +189,9 @@ function drawBadge(){var t=$('badge').value.trim();if(!t)return;var r=125,sz=120
   ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.letterSpacing='0px';
   do{ctx.font='800 '+sz+'px Poppins, sans-serif';sz-=4}while(ctx.measureText(t).width>r*1.6&&sz>20);ctx.fillText(t,0,4);ctx.restore()}
 function drawLogo(){var im=imgs[2];if(!im)return;var k=Math.min(220/im.width,120/im.height),w=im.width*k,h=im.height*k;ctx.drawImage(im,W-40-w,40,w,h)}
-['title','sub','foot','size','dark','caps','wt','c1','c2','c3','zoom','px','py','ty','badge','ls','lh','bo','flt','fmt','psz'].forEach(function(i){$(i).addEventListener('input',draw);$(i).addEventListener('change',draw)});
+['title','sub','foot','size','dark','caps','wt','c1','c2','c3','zoom','px','py','ty','badge','ls','lh','bo','flt','fmt','psz','tf'].forEach(function(i){$(i).addEventListener('input',draw);$(i).addEventListener('change',draw)});
 
-var DEF={title:'10 Cozy Fall Dinner Ideas',sub:'easy weeknight recipes',foot:'yourblog.com',size:'104',dark:'20',wt:'700',c1:'#f6e7d8',c2:'#3b2a20',c3:'#c8553d',zoom:'100',px:'0',py:'0',ty:'0',badge:'',ls:'0',lh:'118',bo:'100',flt:'',fmt:'png',psz:'0'};
+var DEF={title:'10 Cozy Fall Dinner Ideas',sub:'easy weeknight recipes',foot:'yourblog.com',size:'104',dark:'20',wt:'700',c1:'#f6e7d8',c2:'#3b2a20',c3:'#c8553d',zoom:'100',px:'0',py:'0',ty:'0',badge:'',ls:'0',lh:'118',bo:'100',flt:'',fmt:'png',psz:'0',tf:'0'};
 $('rs').onclick=function(){Object.keys(DEF).forEach(function(k){$(k).value=DEF[k]});$('caps').checked=false;$('f1').value='';$('f2').value='';$('f3').value='';imgs=[null,null,null];layout='banner';
   [].forEach.call(box.children,function(x){x.className=x.dataset.k===layout?'on':''});$('note').textContent='';draw()};
 function slug(){return ($('title').value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'pin').slice(0,50)}
@@ -208,7 +218,7 @@ $('all').onclick=function(){var cur=$('psz').value,jpg=$('fmt').value==='jpg',ba
     cv.toBlob(function(b){b.arrayBuffer().then(function(ab){files.push({name:base+'-'+p[1]+'x'+p[2]+(jpg?'.jpg':'.png'),data:new Uint8Array(ab)});next()})},jpg?'image/jpeg':'image/png',0.92)}
   next()};
 function fontsReady(){return Promise.all(['600','700','800'].map(function(w){return document.fonts.load(w+' 60px Poppins')}))}
-draw();fontsReady().then(draw).catch(function(){});
+draw();fontsReady().then(draw).catch(function(){});loadTF();$('tf').addEventListener('change',loadTF);
 
 $('dl').onclick=function(){
   var name=($('title').value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'pin').slice(0,50)+'-'+OUT.w+'x'+OUT.h+'.'+($('fmt').value==='jpg'?'jpg':'png');
